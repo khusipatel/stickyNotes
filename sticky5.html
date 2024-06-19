@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <!--<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/fontawesome.min.css" integrity="sha512-UuQ/zJlbMVAw/UU8vVBhnI4op+/tFOpQZVT+FormmIEhRSCnJWyHiBbEVgM4Uztsht41f3FzVWgLuwzUqOObKw==" crossorigin="anonymous" referrerpolicy="no-referrer" />-->
+   
+    <style>
+        .stick {
+            display: none;
+            color:rgb(42, 0, 139);
+            font-weight: bold;
+            flex-direction: column;
+            border-radius: 40px;
+            justify-content: center;
+            align-items: center;
+            height: 300px;
+            width: 400px;
+            background-color: rgb(127, 174, 255);
+            margin-bottom: 10px;
+        }
+        #submit{
+            background-color:rgb(75, 130, 223);
+            border-radius: 3px;
+            height: 30px;
+            width:50px;
+            border: 1.5px solid white;
+            color: white;
+        }
+        .input {
+            height: 30px;
+            width: 300px;
+        }
+        .notes-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 10px;
+            margin-top: 20px;
+        }
+       
+        .note,.add-note {
+            border: 1px solid rgb(54, 206, 204);
+            padding: 10px;
+            width: 270px;
+        
+            border-radius: 10px;
+            background-color: lightblue;
+            position: relative;
+        }
+        .add-note{
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height:115px;
+        }
+        .title {
+            color: rgb(5, 50, 50);
+        }
+        .content {
+            color:rgb(37, 105, 169);
+        }
+        .icon {
+            cursor: pointer;
+            width: 20px;
+            height: 20px;
+        }
+        .icons {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            display: flex;
+            gap: 5px;
+        }
+        .add-icon {
+            font-size: 50px;
+            cursor: pointer;
+        }
+    </style>
+     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" integrity="sha512-SnH5WK+bZxgPHs44uWIX+LLJAJ9/2PkPKZ5QiAj6Ta86w+fsb2TkcmfRyVX3pBnMFcV7oQPJkl9QevSCWr3W6A==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+</head>
+<body>
+   
+    <div class="add-note" onclick="showForm()">
+        <span class="add-icon">+</span>
+    </div>
+
+    <div class="stick">
+        <div class="form">
+            <table>
+               
+                <tr>
+                    <td><label for="title">Title</label></td>
+                </tr>
+                <tr>
+                    <td><input type="text" id="title" class="input"></td>
+                </tr>
+                <tr>
+                    <td><label for="notes">Add a note</label></td>
+                </tr>
+                <tr>
+                    <td><textarea name="notes" id="notes" class="input"></textarea></td>
+                </tr>
+                <tr>
+                    <td><button id="submit" onclick="create()">Add</button></td>
+                </tr>
+            </table>
+        </div>
+    </div>
+
+    <div id="output" class="notes-container"></div>
+
+    <script>
+        getdata();
+
+        function showForm() {
+            document.querySelector('.stick').style.display = 'flex';
+            document.querySelector('.add-note').style.display = 'none';
+        }
+
+        function create() {
+            let title = document.getElementById("title").value;
+            let notes = document.getElementById("notes").value;
+
+            let note = {
+                title: title,
+                notes: notes,
+                date: new Date().toLocaleString(),
+                pinned: false
+            };
+
+            let notesarr = [];
+
+            if (localStorage.getItem('note')) {
+                notesarr = JSON.parse(localStorage.getItem('note'));
+            }
+
+            notesarr.push(note);
+
+            localStorage.setItem("note", JSON.stringify(notesarr));
+            document.getElementById('notes').value = '';
+            document.getElementById('title').value = '';
+
+            document.querySelector('.stick').style.display = 'none';
+            document.querySelector('.add-note').style.display = 'flex';
+
+            getdata();
+        }
+
+        function getdata() {
+            const notes = JSON.parse(localStorage.getItem('note')) || [];
+
+            // Sort notes by pinned status
+            notes.sort((a, b) => b.pinned - a.pinned);
+
+            let output = '';
+
+            notes.forEach((note, index) => {
+                output += `
+                    <div class="note">
+                        <h3 class="title">${note.title}</h3>
+                        <p class="content">${note.notes}</p>
+                        <p>${note.date}</p>
+                        <div class="icons">
+                            <i class="fa-solid fa-pen-to-square" style="color: #2668d9;"onclick="editNote(${index})" alt="Edit"></i>
+                           <i class="fa-solid fa-trash" style="color: #2668d9;"onclick="deleteNote(${index})" alt="Delete"></i>
+                        
+                       <i class="fa-solid fa-thumbtack" style="color: #2668d9;"onclick="pinNote(${index})"></i>
+                        </div>
+                    </div>
+                `;
+            });
+
+            document.getElementById('output').innerHTML = output;
+        }
+
+        function editNote(index) {
+            const notes = JSON.parse(localStorage.getItem('note'));
+            const noteToEdit = notes[index];
+            document.getElementById('title').value = noteToEdit.title;
+            document.getElementById('notes').value = noteToEdit.notes;
+
+            // Change the "Add" button to an "Update" button
+            document.getElementById('submit').innerHTML = 'Update';
+            document.getElementById('submit').onclick = function() {
+                update(index);
+            };
+
+            document.querySelector('.stick').style.display = 'flex';
+            document.querySelector('.add-note').style.display = 'none';
+        }
+
+        function update(index) {
+            const notes = JSON.parse(localStorage.getItem('note'));
+            notes[index].title = document.getElementById('title').value;
+            notes[index].notes = document.getElementById('notes').value;
+            localStorage.setItem('note', JSON.stringify(notes));
+            document.getElementById('title').value = '';
+            document.getElementById('notes').value = '';
+            document.getElementById('submit').innerHTML = 'Add';
+            document.getElementById('submit').onclick = create;
+
+            document.querySelector('.stick').style.display = 'none';
+            document.querySelector('.add-note').style.display = 'flex';
+
+            getdata();
+        }
+
+        function deleteNote(index) {
+            const notes = JSON.parse(localStorage.getItem('note'));
+            notes.splice(index, 1);
+            localStorage.setItem('note', JSON.stringify(notes));
+            getdata();
+        }
+
+        function pinNote(index) {
+            const notes = JSON.parse(localStorage.getItem('note'));
+            notes[index].pinned = !notes[index].pinned;
+            localStorage.setItem('note', JSON.stringify(notes));
+            getdata();
+        }
+    </script>
+</body>
+</html>
